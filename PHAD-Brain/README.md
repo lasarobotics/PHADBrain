@@ -1,183 +1,62 @@
-# PHAD-Brain 🧠🤖  
-**Perception & High-level Autonomy Driver for FRC Robots**
+# PHAD-Brain — Quick Run Guide
 
-PHAD-Brain is a **competition-grade, modular autonomy system** designed for FRC robots.  
-It runs off-robot (laptop / coprocessor), communicates with the RoboRIO via **NetworkTables 4**, ingests **Limelight vision + robot state**, and outputs **high-level intent** (not motor commands).
-
-This repo also contains **Limelight neural-detector training pipelines** (TensorFlow Lite + PyTorch), built to be fast, minimal, and match real FRC match constraints.
+This is the **minimal guide** to get PHAD-Brain running and training models.
 
 ---
 
-## 🧩 Project Goals
-- Clean separation of **perception**, **state**, **planning**, and **actuation**
-- Limelight-friendly neural models (small, fast, reliable)
-- NT4-first communication (FRC-native)
-- Deterministic, debuggable autonomy loops
-- Worlds-ready architecture (no bloat, no magic)
+## Requirements
+- Python **3.9 – 3.11**
+- RoboRIO on the same network (for runtime)
+- Limelight (optional for training, required for vision)
 
 ---
 
-## 📁 Repository Structure
-
-PHAD-Brain/
-├── brain/
-│ ├── comms/ # NT4 + ZMQ communication layer
-│ │ ├── protocol.py # Packet + vision data definitions
-│ │ ├── nt4_client.py # RoboRIO & Limelight interface
-│ │ └── zmq_client.py # Optional low-latency transport
-│ ├── intent/ # (future) planners / decision logic
-│ ├── model/ # (future) learned policies
-│ ├── state/ # (future) sensor fusion / world model
-│ ├── utils/
-│ ├── app.py # Brain entry point
-│ └── loop.py # Sense → Think → Act loop
-│
-├── LLtrainingModel/ # Limelight neural model training
-│ ├── train.py # Unified training script (TFLite + ONNX)
-│ ├── data/
-│ │ ├── dataSet1/ # Dataset option 1
-│ │ └── dataSet2/ # Dataset option 2
-│ └── init.py
-│
-├── configs/ # Configs (future)
-├── scripts/ # Utilities (future)
-├── tests/ # Tests (future)
-├── requirements.txt # Full dependency list
-├── README.md
-└── LICENSE
-
-yaml
-Copy code
-
----
-
-## 🔁 Runtime Architecture
-
-### 1️⃣ Sense
-- Reads robot pose & velocity from RoboRIO (`FAD/*`)
-- Reads AprilTag data from Limelight
-- Reads Neural Detector output from Limelight
-- All data cached locally in `NT4Client`
-
-### 2️⃣ Think
-- Combines robot + vision state
-- Decides **intent** (ex: TRACK_TAG, IDLE, GOTO)
-- No motor control here by design
-
-### 3️⃣ Act
-- Publishes intent back to RoboRIO (`PHAD/intent_json`)
-- RoboRIO owns final control
-
----
-
-## 📡 Communication
-- **NetworkTables 4 (NT4)** – primary transport
-- **ZMQ** – optional for future low-latency pipelines
-- JSON-based intent messages
-- Sequence + timestamped packets
-
----
-
-## 🧠 Vision & Neural Detection
-Supported vision inputs:
-- Limelight AprilTags
-- Limelight Neural Detector (classification)
-
-Design rules:
-- Only valid targets are propagated
-- Vision is advisory, not authoritative
-- Multiple Limelights supported (left/right roles)
-
----
-
-## 🏋️ Limelight Neural Model Training
-
-### Training Script
-LLtrainingModel/train.py
-
-markdown
-Copy code
-
-Features:
-- Prompts user to select dataset:
-  - `dataSet1`
-  - `dataSet2`
-- Trains **lightweight CNN**
-- Exports:
-  - `limelight_model.onnx`
-  - `limelight_model.tflite`
-- Dataset format matches Limelight native expectations
-
-### Dataset Layout
-dataSetX/
-├── classA/
-│ ├── img1.jpg
-│ └── img2.jpg
-├── classB/
-│ ├── img1.jpg
-│ └── img2.jpg
-
-yaml
-Copy code
-
----
-
-## ⚙️ Installation
-
-### Python Version
-**Python 3.9 – 3.11 recommended**
-
-### Install Dependencies
+## Install
+From the project root:
 ```bash
 pip install -r requirements.txt
-⚠️ On Windows, use tensorflow-cpu if CUDA causes issues.
+Run PHAD-Brain
+Starts the brain loop and connects to RoboRIO via NetworkTables.
 
-▶️ Running PHAD-Brain
 bash
 Copy code
 python -m brain.app
-What happens:
+What it does:
 
-Connects to RoboRIO via NT4
+Reads robot + Limelight data
 
-Starts main brain loop
+Decides high-level intent
 
-Continuously publishes intent decisions
+Publishes intent back to RoboRIO
 
-🧪 Current Status
-✔ NT4 communication
-✔ Limelight AprilTag ingestion
-✔ Limelight Neural ingestion
-✔ Deterministic brain loop
-✔ Training pipeline (ONNX + TFLite)
+Train Limelight Neural Model
+From LLtrainingModel/:
 
-🔜 Planned:
+bash
+Copy code
+python train.py
+You will be prompted to select:
 
-Sensor fusion (state/)
+dataSet1 or dataSet2
 
-Field-relative planning
+Outputs:
 
-Confidence weighting
+limelight_model.onnx
 
-Multi-target arbitration
+limelight_model.tflite
 
-Match replay + logging
+Upload the .tflite model to Limelight.
 
-🏆 Design Philosophy
-RoboRIO controls motors
+Dataset Format
+Copy code
+dataSetX/
+├── class1/
+├── class2/
+Notes
+PHAD-Brain does not control motors
 
-Brain controls intent
+RoboRIO owns final actuation
 
-Vision assists, never overrides
+Limelight models must stay small for FPS
 
-Simple beats clever in competition
-
-This repo is built for real matches, not demos.
-
-📜 License
-MIT License — use, modify, compete.
-
-👤 Author
-PHAD-Brain
-FRC-focused autonomy + perception stack
-
+That’s it. Run → Train → Deploy.
