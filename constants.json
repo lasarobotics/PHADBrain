@@ -1,0 +1,40 @@
+{
+  "team_number": 418,
+  "cameras": [
+    {
+      "name": "limelight-left",
+      "target_distance_feet": 2.0,
+      "angle_tolerance_deg": 2.0,
+      "distance_tolerance_feet": 0.3,
+      "mount_angle_x_deg": 40.0,
+      "mount_angle_y_deg": 99.846552,
+      "height_inches": 9.5,
+      "offset_x_inches": 8.41,
+      "offset_y_inches": 11.6,
+      "mirror_tx": false
+    },
+    {
+      "name": "limelight-right",
+      "target_distance_feet": 2.0,
+      "angle_tolerance_deg": 2.0,
+      "distance_tolerance_feet": 0.3,
+      "mount_angle_x_deg": 40.0,
+      "mount_angle_y_deg": 99.846552,
+      "height_inches": 9.5,
+      "offset_x_inches": -8.41,
+      "offset_y_inches": 11.6,
+      "mirror_tx": true
+    }
+  ],
+  "limelight": {
+    "dropout_speed_scale": 0.6,
+    "occlusion_window": 0.15
+  },
+  "robot": {
+    "mass_kg": 50.0,
+    "com_height_m": 0.3,
+    "track_width_m": 0.6,
+    "wheelbase_m": 0.6,
+    "friction_coefficient": 1.2
+  }
+}

@@ -1,6 +1,8 @@
+import json
 import math
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, List, Optional, Protocol, Tuple
 
 
@@ -68,20 +70,54 @@ class MultiLimelightPose:
     ) -> None:
         self.nt_client = nt_client
         self.tag_layout = tag_layout or {}
-        self.cameras = camera_configs or [
-            CameraConfig(name="limelight-left", mirror_tx=False, offset_x_inches=8.41),
-            CameraConfig(name="limelight-right", mirror_tx=True, offset_x_inches=-8.41),
-        ]
+        cfg = self._load_constants()
+        self.cameras = camera_configs or self._build_cameras_from_constants(cfg)
         self.last_pose: Dict[str, Optional[Pose2d]] = {cam.name: None for cam in self.cameras}
         self.last_seen: Dict[str, float] = {cam.name: 0.0 for cam in self.cameras}
         self.last_tx: Dict[str, Optional[float]] = {cam.name: None for cam in self.cameras}
         self.last_corners: Dict[str, Optional[List[float]]] = {cam.name: None for cam in self.cameras}
         self.last_tag: Dict[str, int] = {cam.name: -1 for cam in self.cameras}
-        self.dropout_speed_scale = 0.6
-        self.occlusion_window = 0.15
+        self.dropout_speed_scale = float(cfg.get("limelight", {}).get("dropout_speed_scale", 0.6))
+        self.occlusion_window = float(cfg.get("limelight", {}).get("occlusion_window", 0.15))
 
     def _entry_key(self, cam: CameraConfig, key: str) -> str:
         return f"{cam.name}/{key}"
+
+    def _load_constants(self) -> Dict:
+        root = Path(__file__).resolve().parent.parent.parent
+        cfg_path = root / "constants.json"
+        if cfg_path.exists():
+            try:
+                with cfg_path.open("r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                return {}
+        return {}
+
+    def _build_cameras_from_constants(self, cfg: Dict) -> List[CameraConfig]:
+        cams_cfg = cfg.get("cameras")
+        if not isinstance(cams_cfg, list) or len(cams_cfg) == 0:
+            return [
+                CameraConfig(name="limelight-left", mirror_tx=False, offset_x_inches=8.41),
+                CameraConfig(name="limelight-right", mirror_tx=True, offset_x_inches=-8.41),
+            ]
+        cams: List[CameraConfig] = []
+        for c in cams_cfg:
+            cams.append(
+                CameraConfig(
+                    name=str(c.get("name", "limelight")),
+                    target_distance_feet=float(c.get("target_distance_feet", 2.0)),
+                    angle_tolerance_deg=float(c.get("angle_tolerance_deg", 2.0)),
+                    distance_tolerance_feet=float(c.get("distance_tolerance_feet", 0.3)),
+                    mount_angle_x_deg=float(c.get("mount_angle_x_deg", 40.0)),
+                    mount_angle_y_deg=float(c.get("mount_angle_y_deg", 99.846552)),
+                    height_inches=float(c.get("height_inches", 9.5)),
+                    offset_x_inches=float(c.get("offset_x_inches", 8.41)),
+                    offset_y_inches=float(c.get("offset_y_inches", 11.6)),
+                    mirror_tx=bool(c.get("mirror_tx", False)),
+                )
+            )
+        return cams
 
     def _parse_botpose(self, cam: CameraConfig, suffix: str) -> Optional[Pose2d]:
         data = self.nt_client.get_double_array(self._entry_key(cam, suffix), [])
