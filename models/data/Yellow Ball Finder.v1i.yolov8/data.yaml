@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ['Yellow-Ball']
+
+roboflow:
+  workspace: test-eydax
+  project: yellow-ball-finder-8vwfx
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/test-eydax/yellow-ball-finder-8vwfx/dataset/1
