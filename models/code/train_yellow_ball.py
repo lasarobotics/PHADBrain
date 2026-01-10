@@ -64,6 +64,7 @@ def main():
     train_run = model_dir / "train_run"
     clean_dir(train_run)
     ensure_dir(train_run)
+    ensure_dir(train_run / "weights")
 
     old_cwd = Path.cwd()
     os.chdir(data_yaml.parent)
@@ -76,11 +77,12 @@ def main():
     except Exception:
         epochs_val = 40
 
-    device = "cpu"
     if torch.cuda.is_available():
-        device = "cuda"
+        device = "0"
     elif torch.backends.mps.is_available():
         device = "mps"
+    else:
+        device = "cpu"
 
     results = model.train(
         data=str(data_yaml.name),
@@ -88,8 +90,8 @@ def main():
         epochs=epochs_val,
         optimizer="AdamW",
         device=device,
-        project=str(train_run),
-        name="train",
+        project=str(model_dir),
+        name="train_run",
         exist_ok=True,
         save=True,
         plots=False,
@@ -99,10 +101,11 @@ def main():
         save_crop=False,
         show=False,
         verbose=False,
+        half=False,
     )
     os.chdir(old_cwd)
 
-    save_dir = Path(train_run) / "train"
+    save_dir = Path(model_dir) / "train_run"
     if results is not None and hasattr(results, "save_dir"):
         save_dir = Path(results.save_dir)
     elif hasattr(model, "trainer") and hasattr(model.trainer, "save_dir"):
